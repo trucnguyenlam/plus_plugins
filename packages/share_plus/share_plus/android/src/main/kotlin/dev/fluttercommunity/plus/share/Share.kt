@@ -25,9 +25,6 @@ internal class Share(
         getContext().packageName + ".flutter.share_provider"
     }
 
-    private val shareCacheFolder: File
-        get() = File(getContext().cacheDir, "share_plus")
-
     /**
      * Setting mutability flags as API v31+ requires.
      */
@@ -87,13 +84,17 @@ internal class Share(
     @Throws(IOException::class)
     fun shareFiles(
         paths: List<String>,
+        contentUris: List<String>?,
         mimeTypes: List<String>?,
+        panelTitle: String?,
         text: String?,
         subject: String?,
+        targetPackage: String?,
+        isContentUri: String?,
         withResult: Boolean
     ) {
-        clearShareCacheFolder()
-        val fileUris = getUrisForPaths(paths)
+        val usbMassStorage = "true" == isContentUri
+        val fileUris = getUrisForPaths(paths, contentUris, usbMassStorage)
         val shareIntent = Intent()
         when {
             (fileUris.isEmpty() && !text.isNullOrBlank()) -> {
@@ -124,6 +125,7 @@ internal class Share(
         }
         if (text != null) shareIntent.putExtra(Intent.EXTRA_TEXT, text)
         if (subject != null) shareIntent.putExtra(Intent.EXTRA_SUBJECT, subject)
+        if (targetPackage != null) shareIntent.`package` = targetPackage
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         // If we dont want the result we use the old 'createChooser'
         val chooserIntent =
@@ -131,7 +133,7 @@ internal class Share(
                 // Build chooserIntent with broadcast to ShareSuccessManager on success
                 Intent.createChooser(
                     shareIntent,
-                    null, // dialog title optional
+                    panelTitle, // dialog title optional
                     PendingIntent.getBroadcast(
                         context,
                         0,
@@ -140,7 +142,7 @@ internal class Share(
                     ).intentSender
                 )
             } else {
-                Intent.createChooser(shareIntent, null /* dialog title optional */)
+                Intent.createChooser(shareIntent, panelTitle /* dialog title optional */)
             }
         val resInfoList = getContext().packageManager.queryIntentActivities(
             chooserIntent, PackageManager.MATCH_DEFAULT_ONLY
@@ -176,16 +178,17 @@ internal class Share(
     }
 
     @Throws(IOException::class)
-    private fun getUrisForPaths(paths: List<String>): ArrayList<Uri> {
+    private fun getUrisForPaths(paths: List<String>, contentUris: List<String>?, usbMassStorage: Boolean): ArrayList<Uri> {
         val uris = ArrayList<Uri>(paths.size)
-        paths.forEach { path ->
-            var file = File(path)
-            if (fileIsInShareCache(file)) {
-                // If file is saved in '.../caches/share_plus' it will be erased by 'clearShareCacheFolder()'
-                throw IOException("Shared file can not be located in '${shareCacheFolder.canonicalPath}'")
+        // Android sdk 30+, need content uri instead
+        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || usbMassStorage) && !contentUris.isNullOrEmpty()) {
+            contentUris.forEach { path ->
+                uris.add(Uri.parse(path))
             }
-            file = copyToShareCacheFolder(file)
-            uris.add(FileProvider.getUriForFile(getContext(), providerAuthority, file))
+        } else {
+            paths.forEach { path ->
+                uris.add(FileProvider.getUriForFile(getContext(), providerAuthority, File(path)))
+            }
         }
         return uris
     }
@@ -221,34 +224,5 @@ internal class Share(
         } else {
             mimeType.substring(0, mimeType.indexOf("/"))
         }
-    }
-
-    private fun fileIsInShareCache(file: File): Boolean {
-        return try {
-            val filePath = file.canonicalPath
-            filePath.startsWith(shareCacheFolder.canonicalPath)
-        } catch (e: IOException) {
-            false
-        }
-    }
-
-    private fun clearShareCacheFolder() {
-        val folder = shareCacheFolder
-        val files = folder.listFiles()
-        if (folder.exists() && !files.isNullOrEmpty()) {
-            files.forEach { it.delete() }
-            folder.delete()
-        }
-    }
-
-    @Throws(IOException::class)
-    private fun copyToShareCacheFolder(file: File): File {
-        val folder = shareCacheFolder
-        if (!folder.exists()) {
-            folder.mkdirs()
-        }
-        val newFile = File(folder, file.name)
-        file.copyTo(newFile, true)
-        return newFile
     }
 }

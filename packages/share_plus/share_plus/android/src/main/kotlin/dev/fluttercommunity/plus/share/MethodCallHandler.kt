@@ -45,9 +45,13 @@ internal class MethodCallHandler(
                 "shareFiles" -> {
                     share.shareFiles(
                         call.argument<List<String>>("paths")!!,
+                        call.argument<List<String>?>("contentUris"),
                         call.argument<List<String>?>("mimeTypes"),
+                        call.argument<String?>("panelTitle"),
                         call.argument<String?>("text"),
                         call.argument<String?>("subject"),
+                        call.argument<String?>("targetPackage"),
+                        call.argument<String?>("isContentUri"),
                         isWithResult,
                     )
                     success(isWithResult, result)

@@ -73,10 +73,13 @@ class MethodChannelShare extends SharePlatform {
   @override
   Future<ShareResult> shareXFiles(
     List<XFile> files, {
+    String? panelTitle,
     String? subject,
     String? text,
     Rect? sharePositionOrigin,
     List<String>? fileNameOverrides,
+    String? targetPackage,
+    bool isContentUri = false,
   }) async {
     assert(files.isNotEmpty);
     assert(
@@ -96,9 +99,11 @@ class MethodChannelShare extends SharePlatform {
 
     final params = <String, dynamic>{
       'paths': paths,
+      'contentUris': fileNameOverrides,
       'mimeTypes': mimeTypes,
     };
 
+    if (panelTitle != null) params['panelTitle'] = panelTitle;
     if (subject != null) params['subject'] = subject;
     if (text != null) params['text'] = text;
 
@@ -108,6 +113,11 @@ class MethodChannelShare extends SharePlatform {
       params['originWidth'] = sharePositionOrigin.width;
       params['originHeight'] = sharePositionOrigin.height;
     }
+
+    if (targetPackage != null) {
+      params['targetPackage'] = targetPackage;
+    }
+    params['isContentUri'] = isContentUri? 'true' : 'false';
 
     final result = await channel.invokeMethod<String>('shareFiles', params) ??
         'dev.fluttercommunity.plus/share/unavailable';

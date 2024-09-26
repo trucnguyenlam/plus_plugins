@@ -70,10 +70,13 @@ class SharePlusWindowsPlugin extends SharePlatform {
   @override
   Future<ShareResult> shareXFiles(
     List<XFile> files, {
+    String? panelTitle,
     String? subject,
     String? text,
     Rect? sharePositionOrigin,
     List<String>? fileNameOverrides,
+    String? targetPackage,
+    bool isContentUri = false,
   }) {
     throw UnimplementedError(
       'shareXFiles() is only available for Windows versions higher than 10.0.${VersionHelper.kWindows10RS5BuildNumber}.',

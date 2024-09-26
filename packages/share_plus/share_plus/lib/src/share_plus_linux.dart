@@ -65,10 +65,13 @@ class SharePlusLinuxPlugin extends SharePlatform {
   @override
   Future<ShareResult> shareXFiles(
     List<XFile> files, {
+    String? panelTitle,
     String? subject,
     String? text,
     Rect? sharePositionOrigin,
     List<String>? fileNameOverrides,
+    String? targetPackage,
+    bool isContentUri = false,
   }) {
     throw UnimplementedError(
       'shareXFiles() has not been implemented on Linux.',

@@ -122,18 +122,24 @@ class Share {
   /// See documentation about [ShareResult] on [share] method.
   static Future<ShareResult> shareXFiles(
     List<XFile> files, {
+    String? panelTitle,
     String? subject,
     String? text,
     Rect? sharePositionOrigin,
     List<String>? fileNameOverrides,
+    String? targetPackage,
+    bool isContentUri = false,
   }) async {
     assert(files.isNotEmpty);
     return _platform.shareXFiles(
       files,
+      panelTitle: panelTitle,
       subject: subject,
       text: text,
       sharePositionOrigin: sharePositionOrigin,
       fileNameOverrides: fileNameOverrides,
+      targetPackage: targetPackage,
+      isContentUri: isContentUri,
     );
   }
 }
